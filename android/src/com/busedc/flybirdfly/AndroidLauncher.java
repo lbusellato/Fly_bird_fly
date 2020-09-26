@@ -28,9 +28,7 @@ public class AndroidLauncher extends AndroidApplication {
 		//Enforce full screen
 		config.useImmersiveMode = true;
 
-		int width = 1440, height = 2560;
-
-		initialize(new Game(width, height), config);
+		initialize(new Game(), config);
 	}
 
 	//Used to keep the screen on while debugging

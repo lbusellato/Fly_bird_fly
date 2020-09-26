@@ -9,63 +9,31 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.input.GestureDetector;
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
-import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Box2D;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
-import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.ContactImpulse;
 import com.badlogic.gdx.physics.box2d.ContactListener;
-import com.badlogic.gdx.physics.box2d.Fixture;
-import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.Manifold;
-import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
-import com.badlogic.gdx.utils.Array;
 
-import java.awt.geom.RectangularShape;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.Random;
 
-import static com.badlogic.gdx.graphics.Texture.TextureWrap.ClampToEdge;
-import static com.badlogic.gdx.graphics.Texture.TextureWrap.Repeat;
-
 public class Game extends ApplicationAdapter implements  GestureDetector.GestureListener  {
-
 	private SpriteBatch batch;
 	private World world;
-	private Box2DDebugRenderer debugRenderer;
+	private Box2DDebugRenderer Renderer;
 	private Camera camera;
-	private Body birdBody;
-	private Body tubeBody;
-	private Body[] lowerTubes;
-	private Body[] upperTubes;
-	private Sprite bird;
-	private Sprite ground_fill;
-	private Texture ground_top;
-	private Texture bg;
-	private Texture stars;
-	private Sprite tube;
-	private static Fixture birdFixture;
+
+	private static Bird Bird;
+	private Ground Ground;
+	private BG BG;
+	private Tube[] lowerTubes;
+	private Tube[] upperTubes;
 
 	private float[] tubeHeights = {-20f, -20f, -20f};
-	private float tubeXdist = 20f;
-	private float tubeYdist = 10f;
-
-	private float tubeHWidth = 2.5f;
-	private float tubeVelocity = -6.5f;
-	private float angle = 45.0f;
-	private float ground_topX = 0f;
-	private float bg_X = 0f;
-	private float stars_X = 0f;
-	private float bg_col_r;
-	private float bg_col_g;
-	private float bg_col_b;
 
 	private int width;
 	private int height;
@@ -73,173 +41,68 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 	private int SCORE = 0;
 
 	private static boolean GAME_OVER = false;
-	private boolean isNight = false;
 	private boolean updateScore = false;
-	private static boolean DEBUG = false;
 
-	public Game(int width, int height)
+	private Random r = new Random();
+
+	public Game()
 	{
-		this.width = width;
-		this.height = height;
 	}
 
 		@Override
 	public void create () {
-		this.batch = new SpriteBatch();
-		this.bird = new Sprite(new Texture("bird.png"));
-		this.ground_fill = new Sprite(new Texture("ground_fill.png"));
-		ground_fill.setPosition(0f,0f);
 		Box2D.init();
-		this.world = new World(new Vector2(0, -10), true);
-		this.camera = new OrthographicCamera(
-				(float)Gdx.graphics.getWidth() / 32f,
-				(float)Gdx.graphics.getHeight() / 32f);
-		this.debugRenderer = new Box2DDebugRenderer();
+
+		batch = new SpriteBatch();
+
+		world = new World(new Vector2(0, Constants.WORLD_GRAVITY), true);
+
+		this.width = Gdx.graphics.getWidth();
+		this.height = Gdx.graphics.getHeight();
+
+		camera = new OrthographicCamera((float)width / Constants.PPM, (float)height / Constants.PPM);
+
+		Renderer = new Box2DDebugRenderer();
 
 		GestureDetector gd = new GestureDetector(this);
 		Gdx.input.setInputProcessor(gd);
 
 		world.setContactListener(new ListenerClass());
 
-		//Bird body definition
-		BodyDef bodyDef = new BodyDef();
-		bodyDef.type = BodyDef.BodyType.DynamicBody;
-		bodyDef.position.set(0, 0);
-		birdBody = world.createBody(bodyDef);
-		CircleShape circle = new CircleShape();
-		circle.setRadius(1.5f);
-		FixtureDef birdFixtureDef = new FixtureDef();
-		birdFixtureDef.shape = circle;
-		birdFixtureDef.density = 4f;
-		birdFixtureDef.friction = 0.0f;
-		birdFixtureDef.restitution = 0f;
-		Fixture fixture = birdBody.createFixture(birdFixtureDef);
-		circle.dispose();
+		Bird = new Bird(world, new Vector2(0,0), "bird.png", 1.5f);
+		Ground = new Ground(world,
+				new Vector2(0, Constants.GROUND_OFFSET / Constants.PPM - height / (2 * Constants.PPM)),
+				new Vector2(camera.viewportWidth, height / (4f * Constants.PPM)),
+				new Vector2(0,0),
+				new Vector2( width,Constants.GROUND_OFFSET + height / 4f),
+				"ground_fill.png",
+				"ground_top.png");
+		BG = new BG(width, height);
 
-		//Ground body definition
-		BodyDef groundBodyDef = new BodyDef();
-		groundBodyDef.position.set(new Vector2(0, (20f - (float)Gdx.graphics.getHeight()) / 64f));
-		Body groundBody = world.createBody(groundBodyDef);
-		PolygonShape groundBox = new PolygonShape();
-		groundBox.setAsBox(camera.viewportWidth, (float)Gdx.graphics.getHeight() / 128f);
-		FixtureDef groundFixtureDef = new FixtureDef();
-		groundFixtureDef.shape = groundBox;
-		groundFixtureDef.density = 1f;
-		groundFixtureDef.friction = 0.0f;
-		groundFixtureDef.restitution = 0f;
-		groundFixtureDef.filter.groupIndex = -1;
-		groundBody.createFixture(groundFixtureDef);
-		groundBox.dispose();
+		randomizeTubeHeights();
 
-		randomizeTubeHeights(-1);
-
-		lowerTubes = new Body[3];
+		lowerTubes = new Tube[3];
 		for(int i = 0; i < 3; ++i)
 		{
-			//Tube body definition
-			BodyDef tubeBodyDef = new BodyDef();
-			tubeBodyDef.type = BodyDef.BodyType.DynamicBody;
-			tubeBodyDef.position.set(30 + tubeXdist * i, tubeHeights[i]);
-			tubeBodyDef.gravityScale = 0f;
-			tubeBody = world.createBody(tubeBodyDef);
-			PolygonShape tubeRect = new PolygonShape();
-			tubeRect.setAsBox(tubeHWidth, 20);
-			FixtureDef tubeFixtureDef = new FixtureDef();
-			tubeFixtureDef.shape = tubeRect;
-			tubeFixtureDef.density = 0.0f;
-			tubeFixtureDef.friction = 0.0f;
-			tubeFixtureDef.restitution = 0f;
-			tubeFixtureDef.filter.groupIndex = -1;
-			tubeBody.createFixture(tubeFixtureDef);
-			tubeRect.dispose();
-			tubeBody.setLinearVelocity(tubeVelocity, 0f);
-			lowerTubes[i] = tubeBody;
+			lowerTubes[i] = new Tube(world, tubeHeights[i], i, 0);
 		}
 
-		upperTubes = new Body[3];
+		upperTubes = new Tube[3];
 		for(int i = 0; i < 3; ++i)
 		{
-			//Tube body definition
-			BodyDef tubeBodyDef = new BodyDef();
-			tubeBodyDef.type = BodyDef.BodyType.DynamicBody;
-			tubeBodyDef.position.set(30 + tubeXdist * i, tubeHeights[i] + tubeYdist + 40);
-			tubeBodyDef.gravityScale = 0f;
-			tubeBody = world.createBody(tubeBodyDef);
-			PolygonShape tubeRect = new PolygonShape();
-			tubeRect.setAsBox(tubeHWidth, 20);
-			FixtureDef tubeFixtureDef = new FixtureDef();
-			tubeFixtureDef.shape = tubeRect;
-			tubeFixtureDef.density = 0.0f;
-			tubeFixtureDef.friction = 0.0f;
-			tubeFixtureDef.restitution = 0f;
-			tubeFixtureDef.filter.groupIndex = -1;
-			tubeBody.createFixture(tubeFixtureDef);
-			tubeRect.dispose();
-			tubeBody.setLinearVelocity(tubeVelocity, 0f);
-			upperTubes[i] = tubeBody;
+			upperTubes[i] = new Tube(world, tubeHeights[i], i, 1);
 		}
-
-		//Scale the brown texture to fill the floor
-		float scaleGroundFill = (float)Gdx.graphics.getHeight() / (3.2f * ground_fill.getHeight());
-		ground_fill.setScale(1.0f, scaleGroundFill);
-
-		//Checking what hour it is to switch theme to night/day theme
-		Date date = new Date();   // given date
-		Calendar calendar = GregorianCalendar.getInstance(); // creates a new calendar instance
-		calendar.setTime(date);   // assigns calendar to given date
-		int hour = calendar.get(Calendar.HOUR_OF_DAY); // gets hour in 24h format
-		if(hour >= 18)
-		{
-			bg_col_r = (float)0;
-			bg_col_g = (float)(126/255.0);
-			bg_col_b = (float)(166/255.0);
-			bg = new Texture("bg_dark.png");
-			stars = new Texture("stars.png");
-			stars.setWrap(Repeat, Repeat);
-			isNight = true;
-		}
-		else
-		{
-			bg_col_r = (float)(106/255.0);
-			bg_col_g = (float)(220/255.0);
-			bg_col_b = (float)(220/255.0);
-			bg = new Texture("bg_light.png");
-			isNight = false;
-		}
-		bg.setWrap(Repeat, Repeat);
-		ground_top = new Texture("ground_top.png");
-		ground_top.setWrap(Repeat, Repeat);
-
-		Array<Fixture> birdFixtures = birdBody.getFixtureList();
-		birdFixture = birdFixtures.first();
-
-		tube = new Sprite(new Texture("tube.png"));
 	}
 
-	public void randomizeTubeHeights(int which)
+	public void randomizeTubeHeights() {
+		tubeHeights[0] = Constants.RND_MIN_TUBE_HEIGHT + r.nextFloat() * (Constants.RND_MAX_TUBE_HEIGHT - Constants.RND_MIN_TUBE_HEIGHT);
+		tubeHeights[1] = Constants.RND_MIN_TUBE_HEIGHT + r.nextFloat() * (Constants.RND_MAX_TUBE_HEIGHT - Constants.RND_MIN_TUBE_HEIGHT);
+		tubeHeights[2] = Constants.RND_MIN_TUBE_HEIGHT + r.nextFloat() * (Constants.RND_MAX_TUBE_HEIGHT - Constants.RND_MIN_TUBE_HEIGHT);
+	}
+
+	public void randomizeTubeHeights(int i)
 	{
-		float min = -15f;
-		float max = -5f;
-		Random r = new Random();
-		float random = min + r.nextFloat() * (max - min);
-		switch(which)
-		{
-			case 0:
-				tubeHeights[0] = min + r.nextFloat() * (max - min);
-				break;
-			case 1:
-				tubeHeights[1] = min + r.nextFloat() * (max - min);
-				break;
-			case 2:
-				tubeHeights[2] = min + r.nextFloat() * (max - min);
-				break;
-			case -1:
-			default:
-				tubeHeights[0] = min + r.nextFloat() * (max - min);
-				tubeHeights[1] = min + r.nextFloat() * (max - min);
-				tubeHeights[2] = min + r.nextFloat() * (max - min);
-				break;
-		}
+		tubeHeights[i] = Constants.RND_MIN_TUBE_HEIGHT + r.nextFloat() * (Constants.RND_MAX_TUBE_HEIGHT - Constants.RND_MIN_TUBE_HEIGHT);
 	}
 
 	public void recycleTubes()
@@ -247,27 +110,27 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 		//Reset the tubes positions once they travel through the screen
 		for(int i = 0; i < 3; ++i)
 		{
-			if(lowerTubes[i].getPosition().x < -(float)Gdx.graphics.getWidth() / 32f)
+			if(lowerTubes[i].body.getPosition().x < -width / Constants.PPM)
 			{
 				randomizeTubeHeights(i);
 				if(i == 0)
 				{
-					upperTubes[i].setTransform(lowerTubes[2].getPosition().x + tubeXdist, tubeHeights[i] + 40 + tubeYdist, 0);
-					lowerTubes[i].setTransform(lowerTubes[2].getPosition().x + tubeXdist, tubeHeights[i], 0);
+					upperTubes[i].body.setTransform(lowerTubes[2].body.getPosition().x + Constants.TUBE_X_DIST, tubeHeights[i] + 2 * Constants.TUBE_HHEIGHT + Constants.TUBE_Y_DIST, 0);
+					lowerTubes[i].body.setTransform(lowerTubes[2].body.getPosition().x + Constants.TUBE_X_DIST, tubeHeights[i], 0);
 				}
 				else if(i == 1)
 				{
-					upperTubes[i].setTransform(lowerTubes[0].getPosition().x + tubeXdist, tubeHeights[i] + 40 + tubeYdist, 0);
-					lowerTubes[i].setTransform(lowerTubes[0].getPosition().x + tubeXdist, tubeHeights[i], 0);
+					upperTubes[i].body.setTransform(lowerTubes[0].body.getPosition().x + Constants.TUBE_X_DIST, tubeHeights[i] + 2 * Constants.TUBE_HHEIGHT + Constants.TUBE_Y_DIST, 0);
+					lowerTubes[i].body.setTransform(lowerTubes[0].body.getPosition().x + Constants.TUBE_X_DIST, tubeHeights[i], 0);
 				}
 				else
 				{
-					upperTubes[i].setTransform(lowerTubes[1].getPosition().x + tubeXdist, tubeHeights[i] + 40 + tubeYdist, 0);
-					lowerTubes[i].setTransform(lowerTubes[1].getPosition().x + tubeXdist, tubeHeights[i], 0);
+					upperTubes[i].body.setTransform(lowerTubes[1].body.getPosition().x + Constants.TUBE_X_DIST, tubeHeights[i] + 2 * Constants.TUBE_HHEIGHT + Constants.TUBE_Y_DIST, 0);
+					lowerTubes[i].body.setTransform(lowerTubes[1].body.getPosition().x + Constants.TUBE_X_DIST, tubeHeights[i], 0);
 				}
 				break;
 			}
-			else if(lowerTubes[i].getPosition().x + tubeHWidth < 0)
+			else if(lowerTubes[i].body.getPosition().x + Constants.TUBE_HWIDTH < 0)
 			{
 				updateScore = true;
 			}
@@ -276,50 +139,39 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 
 	public void moveScene()
 	{
-		//Move the bg
-		ground_topX += 7.5f;
-		bg_X += 0.25f;
-		stars_X += 0.075f;
+		Ground.update();
+		BG.update();
 		//Update the bird sprite position and angle
-		bird.setPosition(((float)Gdx.graphics.getWidth() - bird.getWidth()) / 2,
-				(float)Gdx.graphics.getWidth() - 1.5f * 32f + birdBody.getPosition().y * 32f);
+		Bird.update((width - Bird.sprite.getWidth()) / 2,
+				width - 1.5f * Constants.PPM + Bird.body.getPosition().y * Constants.PPM);
 		//While we're at it update the score if the bird has passed over a tube (but only the central one)
-		if(birdBody.getPosition().x > lowerTubes[activeTube].getPosition().x + tubeHWidth && updateScore)
+		if(Bird.body.getPosition().x > lowerTubes[activeTube].body.getPosition().x + Constants.TUBE_HWIDTH && updateScore)
 		{
 			SCORE++;
 			updateScore = false;
 			activeTube = (activeTube == 0) ? 1 : (activeTube == 1) ? 2 : 0;
-			Gdx.app.log("testscore", Integer.toString(SCORE));
 		}
-		bird.setRotation(angle);
+		//Update the bird's angle
+		float angle = (Bird.body.getLinearVelocity().y > 0) ? 30f : -30f;
+		Bird.update(angle);
 	}
 
 	@Override
 	public void render () {
 		camera.update();
-		Gdx.gl.glClearColor(bg_col_r, bg_col_g, bg_col_b, 1);
+		Gdx.gl.glClearColor(BG.R, BG.G, BG.B, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		//Update the bird's angle
-		angle = (birdBody.getLinearVelocity().y > 0) ? 30f : -30f;
-		birdBody.setTransform(birdBody.getPosition(), angle);
-		debugRenderer.render(world, camera.combined);
+
+		Renderer.render(world, camera.combined);
 		recycleTubes();
-		if(!DEBUG)
-		{
-			batch.begin();
-			batch.draw(bg, 0, 555, (int) bg_X, 0, this.width, 462);
-			if(isNight)
-				batch.draw(stars, 0, 1400, (int) stars_X, 0, this.width, 753);
-			tube.draw(batch);
-			//ground_fill.draw(batch);
-			//batch.draw(ground_top, 0, 455, (int) ground_topX, 0, this.width, 100);
-			bird.draw(batch);
-			batch.end();
-		}
+		batch.begin();
+		BG.draw(batch);
+		Ground.draw(batch);
+		Bird.draw(batch);
+		batch.end();
 		if(!GAME_OVER) {
 			world.step(1 / 60f, 6, 2);
 			moveScene();
-			tube.setPosition(lowerTubes[0].getPosition().x, lowerTubes[0].getPosition().y);
 		}
 	}
 	
@@ -327,7 +179,7 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 	public void dispose () {
 		batch.dispose();
 		world.dispose();
-		debugRenderer.dispose();
+		Renderer.dispose();
 	}
 
 	@Override
@@ -337,14 +189,13 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 
 	@Override
 	public boolean tap(float x, float y, int count, int button) {
-		if(birdBody.getPosition().y < (float)Gdx.graphics.getHeight() / 64f)
-			birdBody.setLinearVelocity(0f, 8.5f);
+		if(Bird.body.getPosition().y < (float)Gdx.graphics.getHeight() / 64f)
+			Bird.body.setLinearVelocity(0f, Constants.BIRD_VERTICAL_VELOCITY);
 		return false;
 	}
 
 	@Override
 	public boolean longPress(float x, float y) {
-		DEBUG = !DEBUG;
 		return false;
 	}
 
@@ -396,11 +247,7 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 
 		@Override
 		public void beginContact(Contact contact) {
-			Fixture fixtureA = contact.getFixtureA();
-			Fixture fixtureB = contact.getFixtureB();
-			if(DEBUG)
-				Gdx.app.log("beginContact", "between " + fixtureA.toString() + " and " + fixtureB.toString());
-			if(fixtureA == birdFixture || fixtureB == birdFixture)
+			if(contact.getFixtureA() == Bird.fixture || contact.getFixtureB() == Bird.fixture)
 				GAME_OVER = true;
 		}
 	}
