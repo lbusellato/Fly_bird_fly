@@ -14,7 +14,7 @@ public class Constants {
     public static final float TUBE_X_DIST = 20f;
     public static final float TUBE_Y_DIST = 7.5f;
     public static final float INITIAL_TUBE_OFFSET = 50f;
-    public static final int NIGHT_START_HOUR = 18;
+    public static final int NIGHT_START_HOUR = 1;
     public static final float BG_COLOR_R_DAY = 106f/255f;
     public static final float BG_COLOR_G_DAY = 220f/255f;
     public static final float BG_COLOR_B_DAY = 220f/255f;

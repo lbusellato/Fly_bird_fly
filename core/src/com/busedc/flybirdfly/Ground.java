@@ -10,16 +10,16 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
 
+import static com.badlogic.gdx.graphics.Texture.TextureWrap.ClampToEdge;
 import static com.badlogic.gdx.graphics.Texture.TextureWrap.Repeat;
 
 public class Ground {
     public Sprite fill;
-    public Texture top;
+    public Texture texture;
     public Body body;
-    public int topX = 0;
-    public Vector2 topPosition;
-
-    public Ground(World world, Vector2 position, Vector2 boxDim, Vector2 bbOrigin, Vector2 bbFinal, String fillTexturePath, String topTexturePath)
+    public int textureX = 0;
+    public Vector2 dim;
+    public Ground(World world, Vector2 position, Vector2 boxDim, Vector2 dim, String texturePath)
     {
         //Ground body definition
         BodyDef bodyDef = new BodyDef();
@@ -35,23 +35,18 @@ public class Ground {
         fixtureDef.filter.groupIndex = -1;
         this.body.createFixture(fixtureDef);
         box.dispose();
-        this.fill = new Sprite(new Texture(fillTexturePath));
-        this.fill.setBounds(bbOrigin.x, bbOrigin.y, bbFinal.x, bbFinal.y);
-        this.top = new Texture(topTexturePath);
-        this.top.setWrap(Repeat, Repeat);
-        this.topPosition = new Vector2();
-        this.topPosition.x = 0f;
-        this.topPosition.y = bbFinal.y;
+        this.texture = new Texture(texturePath);
+        this.texture.setWrap(Repeat, ClampToEdge);
+        this.dim = dim;
     }
 
     public void update()
     {
-        topX += Constants.GROUND_TOP_VELOCITY;
+        textureX += Constants.GROUND_TOP_VELOCITY;
     }
 
     public void draw(SpriteBatch batch)
     {
-        this.fill.draw(batch);
-        batch.draw(top, topPosition.x, topPosition.y - top.getHeight(), topX, 0, (int)fill.getWidth(), top.getHeight());
+        batch.draw(texture, 0, 0, textureX, 0, (int)dim.x, (int)dim.y);
     }
 }

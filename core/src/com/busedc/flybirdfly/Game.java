@@ -75,10 +75,8 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 		Ground = new Ground(world,
 				new Vector2(0, Constants.GROUND_OFFSET / Constants.PPM - height / (2 * Constants.PPM)),
 				new Vector2(camera.viewportWidth, height / (4f * Constants.PPM)),
-				new Vector2(0,0),
 				new Vector2( width,Constants.GROUND_OFFSET + height / 4f),
-				"ground_fill.png",
-				"ground_top.png");
+				"ground.png");
 		BG = new BG(width, height);
 
 		randomizeTubeHeights();
