@@ -2,6 +2,7 @@ package com.busedc.flybirdfly;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -32,7 +33,7 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 	private BG BG;
 	private Tube[] lowerTubes;
 	private Tube[] upperTubes;
-
+	private Music bg_music;
 	private float[] tubeHeights = {-20f, -20f, -20f};
 
 	private int width;
@@ -60,16 +61,17 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 		this.width = Gdx.graphics.getWidth();
 		this.height = Gdx.graphics.getHeight();
 
-		camera = new OrthographicCamera((float)width / Constants.PPM, (float)height / Constants.PPM);
-
-		Renderer = new Box2DDebugRenderer();
+		camera = new OrthographicCamera(
+				(float) Math.floor((float)width / Constants.PPM),
+				(float) Math.floor((float)height / Constants.PPM));
+				Renderer = new Box2DDebugRenderer();
 
 		GestureDetector gd = new GestureDetector(this);
 		Gdx.input.setInputProcessor(gd);
 
 		world.setContactListener(new ListenerClass());
 
-		Bird = new Bird(world, new Vector2(0,0), "bird.png", 1.5f);
+		Bird = new Bird(world, new Vector2(0,Constants.BIRD_STARTING_Y), "bird.png", 1.5f);
 		Ground = new Ground(world,
 				new Vector2(0, Constants.GROUND_OFFSET / Constants.PPM - height / (2 * Constants.PPM)),
 				new Vector2(camera.viewportWidth, height / (4f * Constants.PPM)),
@@ -84,13 +86,13 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 		lowerTubes = new Tube[3];
 		for(int i = 0; i < 3; ++i)
 		{
-			lowerTubes[i] = new Tube(world, tubeHeights[i], i, 0);
+			lowerTubes[i] = new Tube(world, tubeHeights[i], i, 0, "tube.png", width, height);
 		}
 
 		upperTubes = new Tube[3];
 		for(int i = 0; i < 3; ++i)
 		{
-			upperTubes[i] = new Tube(world, tubeHeights[i], i, 1);
+			upperTubes[i] = new Tube(world, tubeHeights[i], i, 1,"tube.png", width, height);
 		}
 	}
 
@@ -141,6 +143,11 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 	{
 		Ground.update();
 		BG.update();
+		for(int i = 0; i < 3; ++i)
+		{
+			lowerTubes[i].update();
+			upperTubes[i].update();
+		}
 		//Update the bird sprite position and angle
 		Bird.update((width - Bird.sprite.getWidth()) / 2,
 				width - 1.5f * Constants.PPM + Bird.body.getPosition().y * Constants.PPM);
@@ -149,6 +156,7 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 		{
 			SCORE++;
 			updateScore = false;
+			//Keep track of which tube is the central one
 			activeTube = (activeTube == 0) ? 1 : (activeTube == 1) ? 2 : 0;
 		}
 		//Update the bird's angle
@@ -161,11 +169,14 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 		camera.update();
 		Gdx.gl.glClearColor(BG.R, BG.G, BG.B, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-		Renderer.render(world, camera.combined);
 		recycleTubes();
 		batch.begin();
 		BG.draw(batch);
+		for(int i = 0; i < 3; ++i)
+		{
+			lowerTubes[i].draw(batch);
+			upperTubes[i].draw(batch);
+		}
 		Ground.draw(batch);
 		Bird.draw(batch);
 		batch.end();
