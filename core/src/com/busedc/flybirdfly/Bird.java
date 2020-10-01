@@ -22,7 +22,6 @@ public class Bird {
     public Fixture fixture;
     public Animation<TextureRegion> animation;
     public Texture spriteSheet;
-    public TextureRegion lastframe;
     public float rotation;
     // A variable for tracking elapsed time for the animation
     float stateTime;
@@ -101,7 +100,7 @@ public class Bird {
         batch.draw(
                 currentFrame,
                 position.x + 3 * (float)currentFrame.getRegionWidth() / 2,
-                position.y + 3 * (float)currentFrame.getRegionHeight() / 2,
+                position.y +  (float)currentFrame.getRegionHeight(),
                 (float)currentFrame.getRegionWidth() / 2,
                 (float)currentFrame.getRegionHeight() / 2,
                 currentFrame.getRegionWidth(),

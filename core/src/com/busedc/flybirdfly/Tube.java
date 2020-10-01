@@ -5,15 +5,18 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
+import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.utils.Array;
 
 public class Tube {
     public Sprite sprite;
     public Body body;
     public int width;
     public int height;
+    public Fixture fixture;
 
     public Tube(World world, float tubeHeight, int index, int upper, String texturePath, int width, int height)
     {
@@ -40,6 +43,9 @@ public class Tube {
         this.body.setLinearVelocity(Constants.TUBE_VELOCITY, 0f);
         this.sprite = new Sprite(new Texture(texturePath));
         this.sprite.setFlip(false, upper == 1);
+        //Get the fixture id for collision checks
+        Array<Fixture> fixtures = this.body.getFixtureList();
+        this.fixture = fixtures.first();
         this.update();
     }
 

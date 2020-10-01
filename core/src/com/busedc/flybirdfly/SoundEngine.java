@@ -1,8 +1,10 @@
 package com.busedc.flybirdfly;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 
-public class Sound {
+public class SoundEngine {
     public enum SFX
     {
         FLAP,
@@ -11,14 +13,16 @@ public class Sound {
     }
 
     private Music bgm;
-    private Music flap;
-    private Music score;
-    private Music death;
+    private Sound flap;
+    private Sound score;
+    private Sound death;
 
 
-    public Sound()
+    public SoundEngine()
     {
-        sound = Gdx.audio.newSound(Gdx.files.internal("data/testjava.mp3"));
+        flap = Gdx.audio.newSound(Gdx.files.internal("sound/flap.wav"));
+        score = Gdx.audio.newSound(Gdx.files.internal("sound/score.wav"));
+        death = Gdx.audio.newSound(Gdx.files.internal("sound/dead.wav"));
     }
 
     public void play(SFX sfx)
@@ -26,10 +30,13 @@ public class Sound {
         switch(sfx)
         {
             case FLAP:
+                flap.play();
                 break;
             case SCORE:
+                score.play();
                 break;
             case DEATH:
+                death.play();
                 break;
             default:
                 break;

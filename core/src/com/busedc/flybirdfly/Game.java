@@ -2,6 +2,7 @@ package com.busedc.flybirdfly;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
@@ -25,21 +26,25 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 	private Box2DDebugRenderer Renderer;
 	private Camera camera;
 
+	private Preferences prefs;
 	private static Bird Bird;
 	private GameUI GameUI;
 	private static Ground Ground;
 	public static BG BG;
 	private Score Score;
-	private Tube[] lowerTubes;
-	private Tube[] upperTubes;
-	private Sound Sound;
+	private static Tube[] lowerTubes;
+	private static Tube[] upperTubes;
+	private static SoundEngine Sound;
 	private float[] tubeHeights = {-20f, -20f, -20f};
 
 	private int width;
 	private int height;
 	private int activeTube = 0;
 
+	private int highscore;
+
 	private static boolean GAME_OVER = false;
+	private static boolean DEAD = false;
 	private boolean updateScore = false;
 
 	private Random r = new Random();
@@ -51,6 +56,8 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 	public void create() {
 		Box2D.init();
 
+		Preferences prefs = Gdx.app.getPreferences("hiscore");
+		highscore = prefs.getInteger("highscore");
 		batch = new SpriteBatch();
 
 		world = new World(new Vector2(0, Constants.WORLD_GRAVITY), true);
@@ -90,7 +97,7 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 			upperTubes[i] = new Tube(world, tubeHeights[i], i, 1, "bg/tube.png", width, height);
 		}
 
-		Sound = new Sound();
+		Sound = new SoundEngine();
 	}
 
 	public void randomizeTubeHeights() {
@@ -125,21 +132,15 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 		}
 	}
 
-	public void dying()
-	{
-		//Update the bird sprite position and angle
-		Bird.update((width - 34f * 4f) / 2,
-				width - 1.5f * Constants.PPM + Bird.body.getPosition().y * Constants.PPM);
-	}
-
 	public void moveScene()
 	{
-		Ground.update();
-		BG.update();
-		for(int i = 0; i < 3; ++i)
-		{
-			lowerTubes[i].update();
-			upperTubes[i].update();
+		if(!GAME_OVER) {
+			Ground.update();
+			BG.update();
+			for (int i = 0; i < 3; ++i) {
+				lowerTubes[i].update();
+				upperTubes[i].update();
+			}
 		}
 		//Update the bird sprite position and angle
 		Bird.update((width - 34f * 4f) / 2,
@@ -148,24 +149,29 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 		if(Bird.body.getPosition().x > lowerTubes[activeTube].body.getPosition().x + Constants.TUBE_HWIDTH && updateScore)
 		{
 			Score.update();
+			if(Score.score > highscore)
+			{
+				highscore = Score.score;
+			}
+			Sound.play(SoundEngine.SFX.SCORE);
 			updateScore = false;
 			//Keep track of which tube is the central one
 			activeTube = (activeTube == 0) ? 1 : (activeTube == 1) ? 2 : 0;
 		}
 		//Update the bird's angle
-		float angle = (Bird.body.getLinearVelocity().y > 0) ? 30f : -30f;
+		float angle = (Bird.body.getLinearVelocity().y > 5) ? 30f : (Bird.body.getLinearVelocity().y < -5) ? -30f : 0f;
 		Bird.update(angle);
 	}
 
 	@Override
 	public void render () {
 		camera.update();
-		Gdx.gl.glClearColor(0,0,0,1);//BG.R, BG.G, BG.B, 1);
+		Gdx.gl.glClearColor(BG.R, BG.G, BG.B, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		Renderer.render(world, camera.combined);
+		//Renderer.render(world, camera.combined);
 		recycleTubes();
 		batch.begin();
-		//BG.draw(batch);
+		BG.draw(batch);
 		for(int i = 0; i < 3; ++i)
 		{
 			lowerTubes[i].draw(batch);
@@ -177,7 +183,7 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 		Bird.draw(batch);
 		GameUI.draw(batch);
 		batch.end();
-		if(!GAME_OVER && !GameUI.PAUSE) {
+		if(!GameUI.PAUSE && !DEAD) {
 			world.step(1 / 60f, 6, 2);
 			moveScene();
 		}
@@ -189,6 +195,7 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 		batch.dispose();
 		world.dispose();
 		Renderer.dispose();
+		Sound.dispose();
 	}
 
 	@Override
@@ -201,8 +208,10 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 		if(!GAME_OVER) {
 			GameUI.handleInput(x, y);
 			if (!GameUI.PAUSE)
-				if (Bird.body.getPosition().y < (float) Gdx.graphics.getHeight() / 64f)
+				if (Bird.body.getPosition().y < (float) Gdx.graphics.getHeight() / 64f) {
+					Sound.play(SoundEngine.SFX.FLAP);
 					Bird.body.setLinearVelocity(0f, Constants.BIRD_VERTICAL_VELOCITY);
+				}
 		}
 		return false;
 	}
@@ -261,9 +270,19 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 		@Override
 		public void beginContact(Contact contact) {
 			if(contact.getFixtureA() == Bird.fixture || contact.getFixtureB() == Bird.fixture) {
+				if(contact.getFixtureB() == Ground.fixture || contact.getFixtureA() == Ground.fixture)
+				{
+					DEAD = true;
+				}
 				Bird.update(-90f);
+				Sound.play(SoundEngine.SFX.DEATH);
 				GAME_OVER = true;
 				Bird.STOPPED = true;
+				for (int i = 0; i < 3; ++i) {
+					lowerTubes[i].body.setLinearVelocity(0, 0);
+					upperTubes[i].body.setLinearVelocity(0, 0);
+				}
+				batch.setShader(GrayscaleShader.grayscaleShader);
 			}
 		}
 	}
