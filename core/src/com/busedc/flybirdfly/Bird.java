@@ -1,8 +1,11 @@
 package com.busedc.flybirdfly;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
@@ -13,16 +16,19 @@ import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
 
 public class Bird {
-    public Sprite sprite;
+    public boolean STOPPED = false;
     public Body body;
     public Vector2 position;
     public Fixture fixture;
+    public Animation<TextureRegion> animation;
+    public Texture spriteSheet;
+    public TextureRegion lastframe;
     public float rotation;
+    // A variable for tracking elapsed time for the animation
+    float stateTime;
 
     public Bird(World world, Vector2 position, String texturePath, float bodyRadius)
     {
-        //Load the sprite
-        this.sprite = new Sprite(new Texture(texturePath));
         //Bird body definition
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
@@ -44,35 +50,64 @@ public class Bird {
         this.position = new Vector2();
         this.rotation = 0f;
         this.body.setTransform(this.body.getPosition(), this.rotation);
+
+        // Load the sprite sheet as a Texture
+        spriteSheet = new Texture(Gdx.files.internal("bird/sprite_sheet.png"));
+
+        // Use the split utility method to create a 2D array of TextureRegions. This is
+        // possible because this sprite sheet contains frames of equal size and they are
+        // all aligned.
+        TextureRegion[][] tmp = TextureRegion.split(spriteSheet,
+                spriteSheet.getWidth() / 3,
+                spriteSheet.getHeight());
+
+        // Place the regions into a 1D array in the correct order, starting from the top
+        // left, going across first. The Animation constructor requires a 1D array.
+        Array<TextureRegion> frames = new Array<TextureRegion>(3);
+        for (int i = 0; i < 3; i++)
+            frames.add(tmp[0][i]);
+
+        animation =
+                new Animation<TextureRegion>(0.1f, frames, Animation.PlayMode.LOOP_PINGPONG);
+        stateTime = 0f;
+
     }
 
     public void update()
     {
-        this.sprite.setPosition(this.position.x, this.position.y);
-        this.sprite.setRotation(this.rotation);
         this.body.setTransform(this.body.getPosition(), this.rotation);
-    }
-
-    public void update(Vector2 newPos)
-    {
-        this.position = newPos;
-        update();
+       // this.sprite.setPosition(this.position.x, this.position.y);
+       // this.sprite.setRotation(this.rotation);
     }
 
     public void update(float x, float y)
     {
         this.position = new Vector2(x, y);
-        update();
     }
 
     public void update(float rot)
     {
         this.rotation = rot;
-        update();
     }
 
     public void draw(SpriteBatch batch)
     {
-        this.sprite.draw(batch);
+        update();
+        if(!STOPPED)
+            stateTime += Gdx.graphics.getDeltaTime(); // Accumulate elapsed animation time
+
+        // Get current frame of animation for the current stateTime
+        TextureRegion currentFrame = animation.getKeyFrame(stateTime, true);
+        batch.draw(
+                currentFrame,
+                position.x + 3 * (float)currentFrame.getRegionWidth() / 2,
+                position.y + 3 * (float)currentFrame.getRegionHeight() / 2,
+                (float)currentFrame.getRegionWidth() / 2,
+                (float)currentFrame.getRegionHeight() / 2,
+                currentFrame.getRegionWidth(),
+                currentFrame.getRegionHeight(),
+                Constants.BIRD_SPRITE_SCALE,
+                Constants.BIRD_SPRITE_SCALE,
+                rotation);
     }
 }

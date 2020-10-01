@@ -18,6 +18,7 @@ public class BG {
     private float bgX;
     private float starsX;
     public boolean isNight;
+    private Texture sky;
     private Texture bg;
     private Texture stars;
 
@@ -31,13 +32,12 @@ public class BG {
         calendar.setTime(date);   // assigns calendar to given date
         int hour = calendar.get(Calendar.HOUR_OF_DAY); // gets hour in 24h format
         this.isNight = (hour >= Constants.NIGHT_START_HOUR);
-        this.R = (isNight) ? Constants.BG_COLOR_R_NIGHT : Constants.BG_COLOR_R_DAY;
-        this.G = (isNight) ? Constants.BG_COLOR_G_NIGHT : Constants.BG_COLOR_G_DAY;
-        this.B = (isNight) ? Constants.BG_COLOR_B_NIGHT : Constants.BG_COLOR_B_DAY;
-        this.bg = (isNight) ? new Texture("bg_dark.png") : new Texture("bg_light.png");
+        this.bg = (isNight) ? new Texture("bg/bg_dark.png") : new Texture("bg/bg_light.png");
         this.bg.setWrap(Repeat, Repeat);
-        this.stars = (isNight) ? new Texture("stars.png") : new Texture("stars_day.png");
+        this.stars = (isNight) ? new Texture("bg/stars.png") : new Texture("bg/stars_day.png");
         this.stars.setWrap(Repeat, Repeat);
+        this.sky = (isNight) ? new Texture("bg/night_sky.png") : new Texture("bg/day_sky.png");
+        this.sky.setWrap(Repeat, Repeat);
     }
 
     public void update()
@@ -49,6 +49,7 @@ public class BG {
 
     public void draw(SpriteBatch batch)
     {
+        batch.draw(sky, 0, 0, 0, 0, this.width, this.height);
         batch.draw(bg, 0, (float)height / 4, (int) bgX, 0, this.width, bg.getHeight());
         if(isNight)
             batch.draw(stars, 0, - Constants.STARS_OFFSET + 2 * (float)height / 3, (int) starsX, 0, this.width, stars.getHeight());
