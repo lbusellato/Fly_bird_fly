@@ -5,6 +5,7 @@ import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 
 public class SoundEngine {
+    public boolean MUTE = false;
     public enum SFX
     {
         FLAP,
@@ -27,19 +28,20 @@ public class SoundEngine {
 
     public void play(SFX sfx)
     {
-        switch(sfx)
-        {
-            case FLAP:
-                flap.play();
-                break;
-            case SCORE:
-                score.play();
-                break;
-            case DEATH:
-                death.play();
-                break;
-            default:
-                break;
+        if(!MUTE) {
+            switch (sfx) {
+                case FLAP:
+                    flap.play();
+                    break;
+                case SCORE:
+                    score.play();
+                    break;
+                case DEATH:
+                    death.play();
+                    break;
+                default:
+                    break;
+            }
         }
     }
 

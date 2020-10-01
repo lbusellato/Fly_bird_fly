@@ -26,22 +26,22 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 	private Box2DDebugRenderer Renderer;
 	private Camera camera;
 
-	private Preferences prefs;
+	private static Preferences prefs;
 	private static Bird Bird;
 	private GameUI GameUI;
 	private static Ground Ground;
 	public static BG BG;
-	private Score Score;
+	public static Score Score;
 	private static Tube[] lowerTubes;
 	private static Tube[] upperTubes;
-	private static SoundEngine Sound;
+	public static SoundEngine Sound;
 	private float[] tubeHeights = {-20f, -20f, -20f};
 
 	private int width;
 	private int height;
 	private int activeTube = 0;
 
-	private int highscore;
+	private static int highscore;
 
 	private static boolean GAME_OVER = false;
 	private static boolean DEAD = false;
@@ -55,9 +55,13 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 	@Override
 	public void create() {
 		Box2D.init();
-
-		Preferences prefs = Gdx.app.getPreferences("hiscore");
-		highscore = prefs.getInteger("highscore");
+		prefs = Gdx.app.getPreferences("PreferenceName");// We store the value 10 with the key of "highScore"
+		// Provide default high score of 0
+		if (!prefs.contains("highScore")) {
+			prefs.putInteger("highScore", 0);
+		}
+		prefs.flush(); // This saves the preferences file.
+		highscore = prefs.getInteger("highScore");
 		batch = new SpriteBatch();
 
 		world = new World(new Vector2(0, Constants.WORLD_GRAVITY), true);
@@ -149,10 +153,6 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 		if(Bird.body.getPosition().x > lowerTubes[activeTube].body.getPosition().x + Constants.TUBE_HWIDTH && updateScore)
 		{
 			Score.update();
-			if(Score.score > highscore)
-			{
-				highscore = Score.score;
-			}
 			Sound.play(SoundEngine.SFX.SCORE);
 			updateScore = false;
 			//Keep track of which tube is the central one
@@ -207,11 +207,13 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 	public boolean tap(float x, float y, int count, int button) {
 		if(!GAME_OVER) {
 			GameUI.handleInput(x, y);
-			if (!GameUI.PAUSE)
+			if (!GameUI.PAUSE && !GameUI.RESUMED) {
 				if (Bird.body.getPosition().y < (float) Gdx.graphics.getHeight() / 64f) {
 					Sound.play(SoundEngine.SFX.FLAP);
 					Bird.body.setLinearVelocity(0f, Constants.BIRD_VERTICAL_VELOCITY);
 				}
+			}
+			GameUI.RESUMED = false;
 		}
 		return false;
 	}
@@ -254,7 +256,6 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 	public static class ListenerClass implements ContactListener {
 		@Override
 		public void endContact(Contact contact) {
-
 		}
 
 		@Override
@@ -270,13 +271,20 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 		@Override
 		public void beginContact(Contact contact) {
 			if(contact.getFixtureA() == Bird.fixture || contact.getFixtureB() == Bird.fixture) {
-				if(contact.getFixtureB() == Ground.fixture || contact.getFixtureA() == Ground.fixture)
-				{
+				if(contact.getFixtureB() == Ground.fixture || contact.getFixtureA() == Ground.fixture) {
 					DEAD = true;
 				}
 				Bird.update(-90f);
 				Sound.play(SoundEngine.SFX.DEATH);
-				GAME_OVER = true;
+				if(!GAME_OVER)
+				{
+					GAME_OVER = true;
+				}
+				if(Score.score > highscore)
+				{
+					prefs.putInteger("highScore", Score.score);
+					prefs.flush();
+				}
 				Bird.STOPPED = true;
 				for (int i = 0; i < 3; ++i) {
 					lowerTubes[i].body.setLinearVelocity(0, 0);
