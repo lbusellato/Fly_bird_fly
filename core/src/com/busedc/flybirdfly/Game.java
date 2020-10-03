@@ -41,7 +41,7 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 	private int height;
 	private int activeTube = 0;
 
-	private static int highscore;
+	public static int highscore;
 
 	private static boolean GAME_OVER = false;
 	private static boolean DEAD = false;
@@ -256,6 +256,7 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 	public static class ListenerClass implements ContactListener {
 		@Override
 		public void endContact(Contact contact) {
+			Bird.update(0f);
 		}
 
 		@Override
@@ -265,7 +266,7 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 
 		@Override
 		public void postSolve(Contact contact, ContactImpulse impulse) {
-
+			Bird.update(0f);
 		}
 
 		@Override
@@ -274,10 +275,9 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 				if(contact.getFixtureB() == Ground.fixture || contact.getFixtureA() == Ground.fixture) {
 					DEAD = true;
 				}
-				Bird.update(-90f);
-				Sound.play(SoundEngine.SFX.DEATH);
 				if(!GAME_OVER)
 				{
+					Sound.play(SoundEngine.SFX.DEATH);
 					GAME_OVER = true;
 				}
 				if(Score.score > highscore)

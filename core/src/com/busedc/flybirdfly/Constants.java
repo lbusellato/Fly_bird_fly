@@ -8,7 +8,7 @@ public class Constants {
     public static final float GROUND_TOP_VELOCITY = 8f;
     public static final float BIRD_VERTICAL_VELOCITY = 8.5f;
     public static final float BIRD_STARTING_Y = 8.5f;
-    public static final float BIRD_SPRITE_SCALE = 4.25f;
+    public static final float BIRD_SPRITE_SCALE = 4.5f;
     public static final float TUBE_HWIDTH = 2.5f;
     public static final float TUBE_HHEIGHT = 20f;
     public static final float TUBE_VELOCITY = -6.5f;

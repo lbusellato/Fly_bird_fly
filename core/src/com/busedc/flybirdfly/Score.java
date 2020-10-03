@@ -3,14 +3,6 @@ package com.busedc.flybirdfly;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Body;
-import com.badlogic.gdx.physics.box2d.BodyDef;
-import com.badlogic.gdx.physics.box2d.CircleShape;
-import com.badlogic.gdx.physics.box2d.Fixture;
-import com.badlogic.gdx.physics.box2d.FixtureDef;
-import com.badlogic.gdx.physics.box2d.World;
-import com.badlogic.gdx.utils.Array;
 
 public class Score {
     public Sprite h;
@@ -56,9 +48,9 @@ public class Score {
     public void draw(SpriteBatch batch)
     {
         this.u.draw(batch);
+        if(score > 9)
+            this.d.draw(batch);
         if(score > 99)
             this.h.draw(batch);
-        else if(score > 9)
-            this.d.draw(batch);
     }
 }
