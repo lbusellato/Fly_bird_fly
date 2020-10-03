@@ -3,10 +3,11 @@ package com.busedc.flybirdfly;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Preferences;
-import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.input.GestureDetector;
 import com.badlogic.gdx.math.Vector2;
@@ -20,7 +21,7 @@ import com.badlogic.gdx.physics.box2d.World;
 
 import java.util.Random;
 
-public class Game extends ApplicationAdapter implements  GestureDetector.GestureListener {
+public class Main extends ApplicationAdapter implements  GestureDetector.GestureListener {
 	public static SpriteBatch batch;
 	private World world;
 	private Box2DDebugRenderer Renderer;
@@ -28,10 +29,11 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 
 	public static Preferences prefs;
 	private static Bird Bird;
-	private GameUI GameUI;
+	private static GameUI GameUI;
 	private static Ground Ground;
 	public static BG BG;
 	public static Score Score;
+	private Sprite starting;
 	private static Tube[] lowerTubes;
 	private static Tube[] upperTubes;
 	public static SoundEngine Sound;
@@ -43,14 +45,14 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 
 	public static int highscore;
 
-	private static boolean GAME_OVER = false;
-	private static boolean DEAD = false;
+	public static boolean GAME_OVER = false;
+	public static boolean DEAD = false;
 	public static boolean WAITING = true;
 	private boolean updateScore = false;
 
 	private Random r = new Random();
 
-	public Game() {
+	public Main() {
 	}
 
 	@Override
@@ -97,7 +99,9 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 				"bg/ground.png");
 		BG = new BG(width, height);
 		Score = new Score(width, height);
-
+		starting = new Sprite(new Texture("starting/getready.png"));
+		starting.setPosition((float)width / 2 - starting.getWidth() / 2, (float)height / 2 + starting.getHeight() );
+		starting.setScale(Constants.BIRD_SPRITE_SCALE);
 		randomizeTubeHeights();
 
 		lowerTubes = new Tube[3];
@@ -185,17 +189,24 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 			upperTubes[i].draw(batch);
 		}
 		Ground.draw(batch);
-		if(!GameUI.PAUSE)
+		if(!GameUI.PAUSE && !WAITING && !DEAD)
 			Score.draw(batch);
 		Bird.draw(batch);
-		GameUI.draw(batch);
+		if(WAITING)
+			starting.draw(batch);
+		if(DEAD)
+			batch.setShader(null);
+		if(!WAITING)
+			GameUI.draw(batch);
+		if(DEAD)
+			batch.setShader(GrayscaleShader.grayscaleShader);
 		batch.end();
 		if(!GameUI.PAUSE && !DEAD) {
 			world.step(1 / 60f, 6, 2);
 			moveScene();
 		}
 	}
-	
+
 	@Override
 	public void dispose () {
 		Bird.spriteSheet.dispose();
@@ -215,9 +226,9 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 		if(!GAME_OVER) {
 			if(WAITING)
 			{
-				WAITING = !WAITING;
-				Bird.body.setGravityScale(1.0f);
+				WAITING = false;
 				Bird.animate();
+				Bird.body.setGravityScale(1.0f);
 			}
 			GameUI.handleInput(x, y);
 			if (!GameUI.PAUSE && !GameUI.RESUMED) {
@@ -287,15 +298,11 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 				if(contact.getFixtureB() == Ground.fixture || contact.getFixtureA() == Ground.fixture) {
 					Sound.play(SoundEngine.SFX.DEATH);
 					DEAD = true;
+					GameUI.updateScore();
 				}
 				if(!GAME_OVER)
 				{
 					GAME_OVER = true;
-				}
-				if(Score.score > highscore)
-				{
-					prefs.putInteger("highScore", Score.score);
-					prefs.flush();
 				}
 				Bird.STOPPED = true;
 				for (int i = 0; i < 3; ++i) {

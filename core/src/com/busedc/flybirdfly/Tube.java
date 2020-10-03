@@ -52,7 +52,7 @@ public class Tube {
 
     public void update()
     {
-        this.body.setLinearVelocity((Game.WAITING) ? 0f : Constants.TUBE_VELOCITY, 0f);
+        this.body.setLinearVelocity((Main.WAITING) ? 0f : Constants.TUBE_VELOCITY, 0f);
         this.sprite.setPosition(
                 (float)width / 2 + this.body.getPosition().x * Constants.PPM - Constants.TUBE_HWIDTH * Constants.PPM,
                 (float)height / 2 + this.body.getPosition().y * Constants.PPM - Constants.TUBE_HHEIGHT * Constants.PPM);
