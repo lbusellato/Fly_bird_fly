@@ -19,7 +19,7 @@ public class AndroidLauncher extends AndroidApplication {
 		//Enforce full screen
 		config.useImmersiveMode = true;
 
-		initialize(new MainMenu(), config);
+		initialize(new Main(), config);
 		//initialize(new Game(), config);
 	}
 }

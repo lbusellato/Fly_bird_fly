@@ -28,6 +28,7 @@ public class Bird {
     public float rotation;
     // A variable for tracking elapsed time for the animation
     float stateTime;
+    public int previousCol = -1;
 
     public Bird(World world, Vector2 position, String texturePath, float bodyRadius)
     {
@@ -77,12 +78,38 @@ public class Bird {
 
     }
 
+    public void deanimate()
+    {
+        // Load the sprite sheet as a Texture
+        spriteSheet = new Texture(Gdx.files.internal("bird/bw_sprite_sheet.png"));
+
+        // Use the split utility method to create a 2D array of TextureRegions. This is
+        // possible because this sprite sheet contains frames of equal size and they are
+        // all aligned.
+        TextureRegion[][] tmp = TextureRegion.split(spriteSheet,
+                spriteSheet.getWidth() / 3,
+                spriteSheet.getHeight());
+
+        // Place the regions into a 1D array in the correct order, starting from the top
+        // left, going across first. The Animation constructor requires a 1D array.
+        Array<TextureRegion> frames = new Array<TextureRegion>(3);
+        for (int i = 0; i < 3; i++)
+            frames.add(tmp[0][i]);
+
+        animation =
+                new Animation<TextureRegion>(0.1f, frames, Animation.PlayMode.LOOP_PINGPONG);
+        stateTime = 0f;
+    }
+
     public void animate()
     {
-        Random r = new Random();
-        int col = r.nextInt(3) + 1;
-        // Load the sprite sheet as a Texture
-        switch(col)
+        if(previousCol == -1) {
+            Random r = new Random();
+            int col = r.nextInt(3) + 1;
+            previousCol = col;
+            // Load the sprite sheet as a Texture
+        }
+        switch(previousCol)
         {
             case 1:
             default:
@@ -119,6 +146,14 @@ public class Bird {
         Array<Fixture> fixtures = this.body.getFixtureList();
         Filter filter = fixtures.first().getFilterData();
         filter.maskBits = Constants.MASK_DEAD_BIRD;
+        fixtures.first().setFilterData(filter);
+    }
+
+    public void revive()
+    {
+        Array<Fixture> fixtures = this.body.getFixtureList();
+        Filter filter = fixtures.first().getFilterData();
+        filter.maskBits = Constants.MASK_BIRD;
         fixtures.first().setFilterData(filter);
     }
 

@@ -23,12 +23,12 @@ import java.util.Random;
 
 public class Main extends ApplicationAdapter implements  GestureDetector.GestureListener {
 	public static SpriteBatch batch;
-	private World world;
+	private static World world;
 	private Box2DDebugRenderer Renderer;
 	private Camera camera;
 
 	public static Preferences prefs;
-	private static Bird Bird;
+	public static Bird Bird;
 	private static GameUI GameUI;
 	private static Ground Ground;
 	public static BG BG;
@@ -37,20 +37,22 @@ public class Main extends ApplicationAdapter implements  GestureDetector.Gesture
 	private static Tube[] lowerTubes;
 	private static Tube[] upperTubes;
 	public static SoundEngine Sound;
-	private float[] tubeHeights = {-20f, -20f, -20f};
+	public static TitleScreen titleScreen;
+	private static float[] tubeHeights = {-20f, -20f, -20f};
 
-	private int width;
-	private int height;
-	private int activeTube = 0;
+	private static int width;
+	private static int height;
+	public static int activeTube = 0;
 
 	public static int highscore;
 
+	public static boolean TITLE = true;
 	public static boolean GAME_OVER = false;
 	public static boolean DEAD = false;
 	public static boolean WAITING = true;
-	private boolean updateScore = false;
+	public static boolean updateScore = false;
 
-	private Random r = new Random();
+	private static Random r = new Random();
 
 	public Main() {
 	}
@@ -73,8 +75,8 @@ public class Main extends ApplicationAdapter implements  GestureDetector.Gesture
 
 		world = new World(new Vector2(0, Constants.WORLD_GRAVITY), true);
 
-		this.width = Gdx.graphics.getWidth();
-		this.height = Gdx.graphics.getHeight();
+		width = Gdx.graphics.getWidth();
+		height = Gdx.graphics.getHeight();
 
 		camera = new OrthographicCamera(
 				 width / Constants.PPM,
@@ -113,9 +115,41 @@ public class Main extends ApplicationAdapter implements  GestureDetector.Gesture
 		for (int i = 0; i < 3; ++i) {
 			upperTubes[i] = new Tube(world, tubeHeights[i], i, 1, "bg/tube.png", width, height);
 		}
+
+		titleScreen = new TitleScreen(width, height);
+		Bird.animate();
 	}
 
-	public void randomizeTubeHeights() {
+	public static void resetObjects()
+	{
+		TITLE = true;
+		WAITING = true;
+		GAME_OVER = false;
+		DEAD = false;
+		activeTube = 0;
+		updateScore = false;
+		batch.setShader(null);
+		Score.score = -1;
+		Score.update();
+		Bird.body.setTransform(new Vector2(0, Constants.BIRD_STARTING_Y), 0f);
+		Bird.body.setGravityScale(0.0f);
+		Bird.body.setLinearVelocity(0,0);
+		Bird.STOPPED = false;
+		Bird.previousCol = -1;
+		Bird.animate();
+		Bird.revive();
+		randomizeTubeHeights();
+		for(int i = 0; i < 3; ++i)
+		{
+			lowerTubes[i].body.setTransform(new Vector2(Constants.INITIAL_TUBE_OFFSET + Constants.TUBE_X_DIST * i,
+					tubeHeights[i]), 0f);
+			upperTubes[i].body.setTransform(new Vector2(Constants.INITIAL_TUBE_OFFSET + Constants.TUBE_X_DIST * i,
+					tubeHeights[i] + (Constants.TUBE_Y_DIST + 2 * Constants.TUBE_HHEIGHT)), 0f);
+		}
+		moveScene();
+	}
+
+	public static void randomizeTubeHeights() {
 		tubeHeights[0] = Constants.RND_MIN_TUBE_HEIGHT + r.nextFloat() * (Constants.RND_MAX_TUBE_HEIGHT - Constants.RND_MIN_TUBE_HEIGHT);
 		tubeHeights[1] = Constants.RND_MIN_TUBE_HEIGHT + r.nextFloat() * (Constants.RND_MAX_TUBE_HEIGHT - Constants.RND_MIN_TUBE_HEIGHT);
 		tubeHeights[2] = Constants.RND_MIN_TUBE_HEIGHT + r.nextFloat() * (Constants.RND_MAX_TUBE_HEIGHT - Constants.RND_MIN_TUBE_HEIGHT);
@@ -147,9 +181,9 @@ public class Main extends ApplicationAdapter implements  GestureDetector.Gesture
 		}
 	}
 
-	public void moveScene()
+	public static void moveScene()
 	{
-		if(!GAME_OVER) {
+		if (!GAME_OVER) {
 			Ground.update();
 			BG.update();
 			for (int i = 0; i < 3; ++i) {
@@ -161,8 +195,7 @@ public class Main extends ApplicationAdapter implements  GestureDetector.Gesture
 		Bird.update((width - 34f * 4f) / 2,
 				width - 1.5f * Constants.PPM + Bird.body.getPosition().y * Constants.PPM);
 		//While we're at it update the score if the bird has passed over a tube (but only the central one)
-		if(Bird.body.getPosition().x > lowerTubes[activeTube].body.getPosition().x + Constants.TUBE_HWIDTH && updateScore)
-		{
+		if (Bird.body.getPosition().x > lowerTubes[activeTube].body.getPosition().x + Constants.TUBE_HWIDTH && updateScore) {
 			Score.update();
 			Sound.play(SoundEngine.SFX.SCORE);
 			updateScore = false;
@@ -174,6 +207,7 @@ public class Main extends ApplicationAdapter implements  GestureDetector.Gesture
 		Bird.update(angle);
 	}
 
+
 	@Override
 	public void render () {
 		camera.update();
@@ -183,23 +217,25 @@ public class Main extends ApplicationAdapter implements  GestureDetector.Gesture
 		recycleTubes();
 		batch.begin();
 		BG.draw(batch);
-		for(int i = 0; i < 3; ++i)
-		{
-			lowerTubes[i].draw(batch);
-			upperTubes[i].draw(batch);
-		}
+		if (!TITLE)
+			for (int i = 0; i < 3; ++i) {
+				lowerTubes[i].draw(batch);
+				upperTubes[i].draw(batch);
+			}
 		Ground.draw(batch);
-		if(!GameUI.PAUSE && !WAITING && !DEAD)
+		if (!GameUI.PAUSE && !WAITING && !DEAD && !TITLE)
 			Score.draw(batch);
 		Bird.draw(batch);
-		if(WAITING)
+		if (WAITING && !TITLE)
 			starting.draw(batch);
-		if(DEAD)
+		if (DEAD)
 			batch.setShader(null);
-		if(!WAITING)
+		if (!WAITING && !TITLE)
 			GameUI.draw(batch);
-		if(DEAD)
+		if (DEAD)
 			batch.setShader(GrayscaleShader.grayscaleShader);
+		if(TITLE)
+			titleScreen.draw(batch);
 		batch.end();
 		if(!GameUI.PAUSE && !DEAD) {
 			world.step(1 / 60f, 6, 2);
@@ -223,7 +259,7 @@ public class Main extends ApplicationAdapter implements  GestureDetector.Gesture
 
 	@Override
 	public boolean tap(float x, float y, int count, int button) {
-		if(!GAME_OVER) {
+		if(!GAME_OVER && !TITLE) {
 			if(WAITING)
 			{
 				WAITING = false;
@@ -238,6 +274,14 @@ public class Main extends ApplicationAdapter implements  GestureDetector.Gesture
 				}
 			}
 			GameUI.RESUMED = false;
+		}
+		else if(TITLE)
+		{
+			titleScreen.handleInput(x, y);
+		}
+		else if (DEAD)
+		{
+			GameUI.handleInput(x, y);
 		}
 		return false;
 	}

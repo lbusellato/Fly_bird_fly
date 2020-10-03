@@ -36,6 +36,8 @@ public class TitleScreen {
         if(x > start.getX() - start.getWidth() - ((float)width / 2 - start.getX()) && x < start.getX() + 2 * start.getWidth() + ((float)width / 2 - start.getX())
         && y > start.getY() + 2.75 * start.getHeight() && y < start.getY() + 6 * start.getHeight())
         {
+            Main.TITLE = false;
+            Main.Bird.deanimate();
         }
     }
 

@@ -57,7 +57,9 @@ public class GameUI {
 
     public void handleInput(float x, float y)
     {
-        if (!PAUSE) {
+        if (!PAUSE && !Main.DEAD) {
+            //The game's not paused check if the pause button has been pressed
+            //if so display the pause menu along with score and high score
             if (x > pause.getOriginX() && x < pause.getWidth() * 2 + pause.getX() + pause.getOriginX()) {
                 if (y < (height - pause.getY()) * 2f && y > height - pause.getY() - pause.getHeight() * 2 - pause.getOriginY()) {
                     pauseMenu.setPosition((float) width / 2 - pauseMenu.getWidth() / 2, (float) height / 2);
@@ -89,7 +91,9 @@ public class GameUI {
                     RESUMED = true;
                 }
             }
-        } else {
+        } else if(PAUSE && !Main.DEAD){
+            //The game's already paused, check if the continue button has been pressed
+            //if so hide everything and display again the pause button and the score
             if (x < (float) width / 2 - 100f && x > (float) width / 2 - 400f &&
                     y < (float) height / 2 - pauseMenu.getHeight() / 2 + 120f && y > (float) height / 2 - pauseMenu.getHeight() / 2) {
                 pauseMenu.setPosition(-1000, -1000);
@@ -102,7 +106,9 @@ public class GameUI {
                 Main.batch.setShader(null);
                 PAUSE = !PAUSE;
                 RESUMED = true;
-            } else if (x > (float) width / 2 - 54f && x < (float) width / 2 + 62f &&
+            }
+            //Check if the mute button has been pressed
+            else if (x > (float) width / 2 - 54f && x < (float) width / 2 + 62f &&
                     y < (float) height / 2 - pauseMenu.getHeight() / 2 + 120f && y > (float) height / 2 - pauseMenu.getHeight() / 2) {
                 Main.Sound.MUTE = !Main.Sound.MUTE;
                 Main.prefs.putBoolean("mute", Main.Sound.MUTE);
@@ -111,7 +117,32 @@ public class GameUI {
                         new Texture("UI/muted_pause_menu.png") :
                         new Texture("UI/unmuted_pause_menu.png"));
             }
+            else if(x < (float) width / 2 - 100f && x > (float) width / 2 - 400f &&
+                    y < (float) height / 2 - pauseMenu.getHeight() / 2 + 100f && y > (float) height / 2 - pauseMenu.getHeight() / 2 - 20f)
+            {
+                resetToTitle();
+            }
         }
+        else if(x < (float) width / 2 - 90f && x > (float) width / 2 - 400f &&
+                y < (float) height / 2 - game_over.getHeight() / 2 - 30f && y > (float) height / 2 - game_over.getHeight() / 2 - 145f)
+        {
+            resetToTitle();
+        }
+    }
+
+    public void resetToTitle()
+    {
+        pauseMenu.setPosition(-1000, -1000);
+        u.setPosition(-100, -100);
+        d.setPosition(-100, -100);
+        h.setPosition(-100, -100);
+        u_hi.setPosition(-100, -100);
+        d_hi.setPosition(-100, -100);
+        h_hi.setPosition(-100, -100);
+        game_over.setPosition(-1000, -1000);
+        RESUMED = true;
+        PAUSE = false;
+        Main.resetObjects();
     }
 
     public void updateScore()
