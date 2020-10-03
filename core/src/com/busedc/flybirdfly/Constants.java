@@ -19,4 +19,11 @@ public class Constants {
     public static final float RND_MAX_TUBE_HEIGHT = -20f;
     public static final float RND_MIN_TUBE_HEIGHT = 0f;
     public static final float TUBE_X_SCALE_CORRECTION = 1.05f;
+    public static final short CATEGORY_BIRD = 0x0001;
+    public static final short CATEGORY_TUBE = 0x0002;
+    public static final short CATEGORY_GROUND = 0x0004;
+    public static final short MASK_BIRD = CATEGORY_GROUND | CATEGORY_TUBE;
+    public static final short MASK_DEAD_BIRD = CATEGORY_GROUND;
+    public static final short MASK_TUBE = CATEGORY_BIRD;
+    public static final short MASK_GROUND = CATEGORY_BIRD;
 }

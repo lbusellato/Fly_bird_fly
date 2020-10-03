@@ -26,7 +26,7 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 	private Box2DDebugRenderer Renderer;
 	private Camera camera;
 
-	private static Preferences prefs;
+	public static Preferences prefs;
 	private static Bird Bird;
 	private GameUI GameUI;
 	private static Ground Ground;
@@ -45,6 +45,7 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 
 	private static boolean GAME_OVER = false;
 	private static boolean DEAD = false;
+	public static boolean WAITING = true;
 	private boolean updateScore = false;
 
 	private Random r = new Random();
@@ -59,6 +60,10 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 		// Provide default high score of 0
 		if (!prefs.contains("highScore")) {
 			prefs.putInteger("highScore", 0);
+		}
+		// Provide default mute button state
+		if (!prefs.contains("mute")) {
+			prefs.putBoolean("mute", false);
 		}
 		prefs.flush(); // This saves the preferences file.
 		highscore = prefs.getInteger("highScore");
@@ -79,8 +84,12 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 
 		world.setContactListener(new ListenerClass());
 
+
+		Sound = new SoundEngine();
+		Sound.MUTE = prefs.getBoolean("mute");
 		GameUI = new GameUI(width, height);
 		Bird = new Bird(world, new Vector2(0, Constants.BIRD_STARTING_Y), "bird.png", 1.5f);
+		Bird.body.setGravityScale(0f);
 		Ground = new Ground(world,
 				new Vector2(0, Constants.GROUND_OFFSET / Constants.PPM - height / (2 * Constants.PPM)),
 				new Vector2(camera.viewportWidth, height / (4f * Constants.PPM)),
@@ -100,8 +109,6 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 		for (int i = 0; i < 3; ++i) {
 			upperTubes[i] = new Tube(world, tubeHeights[i], i, 1, "bg/tube.png", width, height);
 		}
-
-		Sound = new SoundEngine();
 	}
 
 	public void randomizeTubeHeights() {
@@ -206,6 +213,12 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 	@Override
 	public boolean tap(float x, float y, int count, int button) {
 		if(!GAME_OVER) {
+			if(WAITING)
+			{
+				WAITING = !WAITING;
+				Bird.body.setGravityScale(1.0f);
+				Bird.animate();
+			}
 			GameUI.handleInput(x, y);
 			if (!GameUI.PAUSE && !GameUI.RESUMED) {
 				if (Bird.body.getPosition().y < (float) Gdx.graphics.getHeight() / 64f) {
@@ -256,7 +269,6 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 	public static class ListenerClass implements ContactListener {
 		@Override
 		public void endContact(Contact contact) {
-			Bird.update(0f);
 		}
 
 		@Override
@@ -266,18 +278,18 @@ public class Game extends ApplicationAdapter implements  GestureDetector.Gesture
 
 		@Override
 		public void postSolve(Contact contact, ContactImpulse impulse) {
-			Bird.update(0f);
 		}
 
 		@Override
 		public void beginContact(Contact contact) {
-			if(contact.getFixtureA() == Bird.fixture || contact.getFixtureB() == Bird.fixture) {
+			if(!DEAD && contact.getFixtureA() == Bird.fixture || contact.getFixtureB() == Bird.fixture) {
+				Bird.kill();
 				if(contact.getFixtureB() == Ground.fixture || contact.getFixtureA() == Ground.fixture) {
+					Sound.play(SoundEngine.SFX.DEATH);
 					DEAD = true;
 				}
 				if(!GAME_OVER)
 				{
-					Sound.play(SoundEngine.SFX.DEATH);
 					GAME_OVER = true;
 				}
 				if(Score.score > highscore)

@@ -25,7 +25,9 @@ public class GameUI {
         pause = new Sprite(new Texture("UI/pause_btn.png"));
         pause.setScale(4.0f);
         pause.setPosition(pause.getWidth() * 2, height - pause.getHeight() * 4);
-        pauseMenu = new Sprite(new Texture("UI/unmuted_pause_menu.png"));
+        pauseMenu = new Sprite((Game.Sound.MUTE) ?
+                new Texture("UI/muted_pause_menu.png") :
+                new Texture("UI/unmuted_pause_menu.png"));
         pauseMenu.setScale(4.0f);
         pauseMenu.setPosition(-1000, -1000);
         u = new Sprite(new Texture("score_nos/0.png"));
@@ -105,6 +107,8 @@ public class GameUI {
                     y < (float)height / 2 - pauseMenu.getHeight() / 2 + 120f && y > (float)height / 2  - pauseMenu.getHeight() / 2)
             {
                 Game.Sound.MUTE = !Game.Sound.MUTE;
+                Game.prefs.putBoolean("mute", Game.Sound.MUTE);
+                Game.prefs.flush(); // This saves the preferences file.
                 pauseMenu.setTexture((Game.Sound.MUTE) ?
                         new Texture("UI/muted_pause_menu.png") :
                         new Texture("UI/unmuted_pause_menu.png") );

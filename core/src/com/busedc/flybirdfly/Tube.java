@@ -37,10 +37,11 @@ public class Tube {
         fixtureDef.density = 100.0f;
         fixtureDef.friction = 0.0f;
         fixtureDef.restitution = 0f;
-        fixtureDef.filter.groupIndex = -1;
+        fixtureDef.filter.categoryBits = Constants.CATEGORY_TUBE;
+        fixtureDef.filter.maskBits = Constants.MASK_TUBE;
+        //fixtureDef.filter.groupIndex = -1;
         this.body.createFixture(fixtureDef);
         rect.dispose();
-        this.body.setLinearVelocity(Constants.TUBE_VELOCITY, 0f);
         this.sprite = new Sprite(new Texture(texturePath));
         this.sprite.setFlip(false, upper == 1);
         //Get the fixture id for collision checks
@@ -51,6 +52,7 @@ public class Tube {
 
     public void update()
     {
+        this.body.setLinearVelocity((Game.WAITING) ? 0f : Constants.TUBE_VELOCITY, 0f);
         this.sprite.setPosition(
                 (float)width / 2 + this.body.getPosition().x * Constants.PPM - Constants.TUBE_HWIDTH * Constants.PPM,
                 (float)height / 2 + this.body.getPosition().y * Constants.PPM - Constants.TUBE_HHEIGHT * Constants.PPM);

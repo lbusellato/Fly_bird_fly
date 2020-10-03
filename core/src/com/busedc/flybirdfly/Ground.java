@@ -35,7 +35,9 @@ public class Ground {
         fixtureDef.density = 1f;
         fixtureDef.friction = 0.0f;
         fixtureDef.restitution = 0f;
-        fixtureDef.filter.groupIndex = -1;
+        fixtureDef.filter.categoryBits = Constants.CATEGORY_GROUND;
+        fixtureDef.filter.maskBits = Constants.MASK_GROUND;
+        //fixtureDef.filter.groupIndex = -1;
         this.body.createFixture(fixtureDef);
         box.dispose();
         this.texture = new Texture(texturePath);
